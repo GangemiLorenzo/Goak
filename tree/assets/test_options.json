@@ -1,0 +1,65 @@
+{
+    "tests": [{
+            "expected": "OUTCOME_0",
+            "conditions": [
+                "A"
+            ]
+        },
+        {
+            "expected": "OUTCOME_1",
+            "conditions": [
+                "B"
+            ]
+        },
+        {
+            "expected": "OUTCOME_2",
+            "conditions": [
+                "C"
+            ]
+        },
+        {
+            "expected": "OUTCOME_3",
+            "conditions": [
+                "C",
+                "B"
+            ]
+        },
+        {
+            "expected": "OUTCOME_4",
+            "conditions": [
+                "E",
+                "C"
+            ]
+        },
+        {
+            "expected": "OUTCOME_4",
+            "conditions": [
+                "E",
+                "B"
+            ]
+        },
+        {
+            "expected": "OUTCOME_3",
+            "conditions": [
+                "E",
+                "C",
+                "B"
+            ]
+        },
+        {
+            "expected": "DEFAULT",
+            "conditions": [
+                "E"
+            ]
+        },
+        {
+            "expected": "OUTCOME_5",
+            "conditions": [
+                "C",
+                "B",
+                "D",
+                "E"
+            ]
+        }
+    ]
+}

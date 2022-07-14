@@ -1,0 +1,52 @@
+{
+    "domains": [{
+            "options": [{
+                "result": "OUTCOME_0",
+                "want": [
+                    "A"
+                ]
+            }]
+        },
+        {
+            "options": [{
+                    "result": "OUTCOME_1",
+                    "want": [
+                        "B"
+                    ]
+                },
+                {
+                    "result": "OUTCOME_2",
+                    "want": [
+                        "C"
+                    ]
+                },
+                {
+                    "result": "OUTCOME_3",
+                    "want": [
+                        "C",
+                        "B"
+                    ]
+                },
+                {
+                    "result": "OUTCOME_4",
+                    "want": [
+                        "E"
+                    ],
+                    "or": [
+                        "C",
+                        "B"
+                    ]
+                },
+                {
+                    "result": "OUTCOME_5",
+                    "want": [
+                        "C",
+                        "B",
+                        "D",
+                        "E"
+                    ]
+                }
+            ]
+        }
+    ]
+}
