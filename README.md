@@ -1,4 +1,4 @@
-# Decisional tree
+# Goak
 Go module to build a decisional tree from a Json file and run a search through it.
 
 ## Json structure
