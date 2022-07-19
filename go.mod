@@ -1,4 +1,4 @@
-module github.com/GangemiLorenzo/decisional-tree
+module github.com/GangemiLorenzo/Goak
 
 go 1.18
 

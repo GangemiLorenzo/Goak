@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/GangemiLorenzo/decisional-tree/tree"
+	"github.com/GangemiLorenzo/Goak/tree"
 )
 
 const (
