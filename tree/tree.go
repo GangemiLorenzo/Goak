@@ -2,10 +2,7 @@ package tree
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
@@ -29,12 +26,19 @@ type (
 	Outcome    string
 	Condition  string
 	Conditions []Condition
+	Outcomes   []Outcome
 )
 
 //DAFAULT outcome for not handled path
 const Default Outcome = "DEFAULT"
 
 //Tree branches interfaces and structs
+
+type Tree struct {
+	Root       Node
+	Conditions Conditions
+	Outcomes   Outcomes
+}
 
 type (
 	IBranch interface {
@@ -51,9 +55,13 @@ type (
 )
 
 //Tree navigation with recursion
+func (t Tree) Search(c Conditions) Outcome {
+	return t.Root.Search(c)
+}
+
 func (n Node) Search(c Conditions) Outcome {
 	for _, k := range n.Want {
-		if ok := c.containsCondition(k); !ok {
+		if ok := c.contains(k); !ok {
 			return n.Fail.Search(c)
 		}
 	}
@@ -65,17 +73,20 @@ func (l Leaf) Search(c Conditions) Outcome {
 }
 
 //Given a Tree json, builds the Tree with recursion
-func BuildTree(filename string) (t Node) {
+func BuildTree(filename string) (t Tree) {
 	jsonFile, _ := os.Open(filename)
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	var tc TreeConf
 	json.Unmarshal(byteValue, &tc)
 	defer jsonFile.Close()
 
-	return buildDomains(
+	t.Root = buildDomains(
 		tc.Domains,
 		Leaf{Result: Default},
 	).(Node)
+
+	t.Conditions, t.Outcomes = tc.extractConditionsAndOutcomes()
+	return
 }
 
 func buildDomains(ds []Domain, def IBranch) (b IBranch) {
@@ -102,6 +113,7 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 			}
 		}
 		if len(os) != 1 {
+			//TODO: if this condition happens, then something is wrong (probably duplicated option with different result)
 			return Leaf{
 				Result: Default,
 			}
@@ -115,7 +127,7 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 	ros := []Option{}
 
 	for _, o := range os {
-		if o.Want.containsCondition(*k) {
+		if o.Want.contains(*k) {
 			o.Want = o.Want.removeCondition(*k)
 			ros = append(ros, o)
 		} else {
@@ -128,6 +140,28 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 		Match: buildOptions(ros, def),
 		Fail:  buildOptions(los, def),
 	}
+}
+
+//Get all conditions and outomes
+
+func (tf TreeConf) extractConditionsAndOutcomes() (Conditions, Outcomes) {
+	conditions := Conditions{}
+	outcomes := Outcomes{}
+
+	for _, d := range tf.Domains {
+		for _, o := range d.Options {
+			if !outcomes.contains(o.Result) {
+				outcomes = append(outcomes, o.Result)
+			}
+			for _, c := range o.Want {
+				if !conditions.contains(c) {
+					conditions = append(conditions, c)
+				}
+			}
+		}
+	}
+
+	return conditions, outcomes
 }
 
 // Tree building utils
@@ -208,13 +242,29 @@ func (k Condition) toString() string {
 	return string(k)
 }
 
-func (c Conditions) containsCondition(k Condition) bool {
-	return contains(c.toString(), string(k))
+func (c Conditions) contains(k Condition) bool {
+	return contains(c.toString(), k.toString())
 }
 
 func (c Conditions) toString() []string {
 	r := make([]string, len(c))
 	for i, k := range c {
+		r[i] = k.toString()
+	}
+	return r
+}
+
+func (k Outcome) toString() string {
+	return string(k)
+}
+
+func (o Outcomes) contains(k Outcome) bool {
+	return contains(o.toString(), k.toString())
+}
+
+func (o Outcomes) toString() []string {
+	r := make([]string, len(o))
+	for i, k := range o {
 		r[i] = k.toString()
 	}
 	return r
@@ -228,43 +278,4 @@ func contains(s []string, str string) bool {
 	}
 
 	return false
-}
-
-//PRINTING
-
-//Print for a Mermaid markdown file
-func printRecursive(n IBranch, mw io.Writer, bff string) {
-
-	node := n.(Node)
-	nbff := bff + node.Want[0].toString()
-
-	fmt.Fprintf(mw, "%s-->|Match|", nbff)
-	if m, ok := node.Match.(Leaf); ok {
-		fmt.Fprintf(mw, "%s;\n", m.Result)
-	}
-	if m, ok := node.Match.(Node); ok {
-		fmt.Fprintf(mw, "%s;\n", nbff+m.Want[0].toString())
-		printRecursive(node.Match, mw, nbff)
-	}
-
-	fmt.Fprintf(mw, "%s-->|Fail|", nbff)
-	if m, ok := node.Fail.(Leaf); ok {
-		fmt.Fprintf(mw, "%s;\n", m.Result)
-	}
-	if m, ok := node.Fail.(Node); ok {
-		fmt.Fprintf(mw, "%s;\n", bff+m.Want[0].toString())
-		printRecursive(node.Fail, mw, bff)
-	}
-}
-
-func (n Node) PrintMarkdown(filename string) {
-	file, err := os.Create(filename + ".md")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mw := io.MultiWriter(os.Stdout, file)
-	fmt.Fprintf(mw, "```mermaid\ngraph TD\n")
-	printRecursive(n, mw, "")
-	fmt.Fprintf(mw, "```")
 }

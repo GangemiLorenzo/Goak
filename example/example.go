@@ -16,10 +16,12 @@ const (
 
 func main() {
 	t := tree.BuildTree("./assets/test_tree.json")
-	t.PrintMarkdown("result")
+	t.PrintMarkdownTree("result")
+
+	t.PrintMarkdownTable("table")
 
 	c := tree.Conditions{
-		B,
+		A,
 		C,
 		D,
 		E,
