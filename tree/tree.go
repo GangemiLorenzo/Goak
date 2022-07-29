@@ -135,10 +135,29 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 		}
 	}
 
+	return shrink(
+		buildOptions(ros, def),
+		buildOptions(los, def),
+		k,
+	)
+}
+
+func shrink(match IBranch, fail IBranch, k *Condition) Node {
+	if m, ok := match.(Node); ok {
+		if l, ok := m.Fail.(Leaf); ok {
+			if l.Result == Default {
+				return Node{
+					Want:  append(m.Want, (*k)),
+					Match: m.Match,
+					Fail:  fail,
+				}
+			}
+		}
+	}
 	return Node{
 		Want:  Conditions{(*k)},
-		Match: buildOptions(ros, def),
-		Fail:  buildOptions(los, def),
+		Match: match,
+		Fail:  fail,
 	}
 }
 

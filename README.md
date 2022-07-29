@@ -94,6 +94,14 @@ The following is the json structure used in the given [example](https://github.c
                         "B"
                     ]
                 },
+                 {
+                    "result": "OUTCOME_3",
+                    "want": [
+                        "C",
+                        "B",
+                        "E"
+                    ]
+                },
                 {
                     "result": "OUTCOME_4",
                     "want": [
@@ -121,7 +129,7 @@ The following is the json structure used in the given [example](https://github.c
 
 This structure will produce the following tree:
 
-[result.md](https://github.com/GangemiLorenzo/Goak/blob/main/example/result.md)
+[tree.md](https://github.com/GangemiLorenzo/Goak/blob/main/example/tree.md)
 
 ```mermaid
 graph TD
@@ -144,3 +152,55 @@ graph TD
 ```
 
 I'm using [Mermaid](https://mermaid-js.github.io/mermaid/) to display the tree.
+
+## Known problems
+
+### Conditions priority
+
+Given the following branches:
+
+```mermaid
+graph TD
+    BC --> Out1
+    BE --> Out2
+    CE --> Out3
+```
+
+Given the following satisfied conditions:
+
+```
+ B
+ C
+ E
+```
+
+What outcome should result from a search?
+
+### Possible solution
+
+We could list the conditions in the json and apply to each of them a greater priority depending on which is listed first.
+
+``` json
+ "conditions": [
+    "B",
+    "C",
+    "E"
+ ]
+```
+
+Given this priority, the result from a search with `BCE` would be: `Out1`.
+
+- [ ] Solution implemented
+
+Another solution could be detect the possible missing option and add it to the json.
+
+``` json
+{
+    "result": "Out1",
+    "want": [
+        "B",
+        "C",
+        "E"
+    ]
+}
+```

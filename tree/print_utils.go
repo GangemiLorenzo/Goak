@@ -25,14 +25,14 @@ func (t Tree) PrintMarkdownTree(filename string) {
 func printRecursive(n IBranch, mw io.Writer, bff string) {
 
 	node := n.(Node)
-	nbff := bff + node.Want[0].toString()
+	nbff := bff + node.Want.toPlainString()
 
 	fmt.Fprintf(mw, "%s-->|Match|", nbff)
 	if m, ok := node.Match.(Leaf); ok {
 		fmt.Fprintf(mw, "%s;\n", m.Result)
 	}
 	if m, ok := node.Match.(Node); ok {
-		fmt.Fprintf(mw, "%s;\n", nbff+m.Want[0].toString())
+		fmt.Fprintf(mw, "%s;\n", nbff+m.Want.toPlainString())
 		printRecursive(node.Match, mw, nbff)
 	}
 
@@ -41,9 +41,17 @@ func printRecursive(n IBranch, mw io.Writer, bff string) {
 		fmt.Fprintf(mw, "%s;\n", m.Result)
 	}
 	if m, ok := node.Fail.(Node); ok {
-		fmt.Fprintf(mw, "%s;\n", bff+m.Want[0].toString())
+		fmt.Fprintf(mw, "%s;\n", bff+m.Want.toPlainString())
 		printRecursive(node.Fail, mw, bff)
 	}
+}
+
+func (cs Conditions) toPlainString() (r string) {
+	r = ""
+	for _, c := range cs {
+		r = r + c.toString()
+	}
+	return
 }
 
 //Print a Table markdown file

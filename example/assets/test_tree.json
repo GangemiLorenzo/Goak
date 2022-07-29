@@ -28,6 +28,14 @@
                     ]
                 },
                 {
+                    "result": "OUTCOME_3",
+                    "want": [
+                        "C",
+                        "B",
+                        "E"
+                    ]
+                },
+                {
                     "result": "OUTCOME_4",
                     "want": [
                         "E"
