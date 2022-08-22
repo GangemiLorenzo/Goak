@@ -12,7 +12,8 @@ type (
 		Domains []Domain `json:"domains"`
 	}
 	Domain struct {
-		Options []Option `json:"options"`
+		Options  []Option   `json:"options"`
+		Priority Conditions `json:"priority"`
 	}
 	Option struct {
 		Result Outcome    `json:"result"`
@@ -35,9 +36,10 @@ const Default Outcome = "DEFAULT"
 //Tree branches interfaces and structs
 
 type Tree struct {
-	Root       Node
-	Conditions Conditions
-	Outcomes   Outcomes
+	Root Node
+	//Conditions and Outcomes are divided by domain
+	Conditions []Conditions
+	Outcomes   []Outcomes
 }
 
 type (
@@ -61,7 +63,7 @@ func (t Tree) Search(c Conditions) Outcome {
 
 func (n Node) Search(c Conditions) Outcome {
 	for _, k := range n.Want {
-		if ok := c.contains(k); !ok {
+		if ok, _ := c.contains(k); !ok {
 			return n.Fail.Search(c)
 		}
 	}
@@ -96,10 +98,10 @@ func buildDomains(ds []Domain, def IBranch) (b IBranch) {
 	}
 
 	i := len(ds) - 1
-	return buildDomains(ds[:i], buildOptions(ds[i].expand().Options, def))
+	return buildDomains(ds[:i], buildOptions(ds[i].expand().Options, def, ds[i].Priority))
 }
 
-func buildOptions(os []Option, def IBranch) (b IBranch) {
+func buildOptions(os []Option, def IBranch, pr Conditions) (b IBranch) {
 	occ := countOccurrences(os)
 
 	//Terminal condition
@@ -120,14 +122,14 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 		}
 	}
 
-	k := higherOccurrence(occ)
+	k := nextCondition(occ, pr)
 
 	//Split in 2 slices
 	los := []Option{}
 	ros := []Option{}
 
 	for _, o := range os {
-		if o.Want.contains(*k) {
+		if ok, _ := o.Want.contains(*k); ok {
 			o.Want = o.Want.removeCondition(*k)
 			ros = append(ros, o)
 		} else {
@@ -136,8 +138,8 @@ func buildOptions(os []Option, def IBranch) (b IBranch) {
 	}
 
 	return shrink(
-		buildOptions(ros, def),
-		buildOptions(los, def),
+		buildOptions(ros, def, pr),
+		buildOptions(los, def, pr),
 		k,
 	)
 }
@@ -161,21 +163,32 @@ func shrink(match IBranch, fail IBranch, k *Condition) Node {
 	}
 }
 
-//Get all conditions and outomes
+//Get all conditions and outcomes
 
-func (tf TreeConf) extractConditionsAndOutcomes() (Conditions, Outcomes) {
+func (tf TreeConf) extractConditionsAndOutcomes() ([]Conditions, []Outcomes) {
+	conditions := []Conditions{}
+	outcomes := []Outcomes{}
+
+	for _, d := range tf.Domains {
+		c, o := d.extractConditionsAndOutcomes()
+		conditions = append(conditions, c)
+		outcomes = append(outcomes, o)
+	}
+
+	return conditions, outcomes
+}
+
+func (d Domain) extractConditionsAndOutcomes() (Conditions, Outcomes) {
 	conditions := Conditions{}
 	outcomes := Outcomes{}
 
-	for _, d := range tf.Domains {
-		for _, o := range d.Options {
-			if !outcomes.contains(o.Result) {
-				outcomes = append(outcomes, o.Result)
-			}
-			for _, c := range o.Want {
-				if !conditions.contains(c) {
-					conditions = append(conditions, c)
-				}
+	for _, o := range d.Options {
+		if ok, _ := outcomes.contains(o.Result); !ok {
+			outcomes = append(outcomes, o.Result)
+		}
+		for _, c := range append(o.Want, o.Or...) {
+			if ok, _ := conditions.contains(c); !ok {
+				conditions = append(conditions, c)
 			}
 		}
 	}
@@ -196,14 +209,16 @@ func countOccurrences(os []Option) (occ map[Condition]int) {
 	return
 }
 
-func higherOccurrence(occ map[Condition]int) *Condition {
-	max := 0
+func nextCondition(occ map[Condition]int, pr Conditions) *Condition {
+	min := len(pr)
 	var cnd Condition
 
-	for k, n := range occ {
-		if n > max {
-			max = n
-			cnd = k
+	for k := range occ {
+		if ok, i := pr.contains(k); ok {
+			if i < min {
+				min = i
+				cnd = k
+			}
 		}
 	}
 
@@ -253,48 +268,4 @@ func (c Conditions) removeCondition(r Condition) Conditions {
 		}
 	}
 	return res
-}
-
-//Basic utils
-
-func (k Condition) toString() string {
-	return string(k)
-}
-
-func (c Conditions) contains(k Condition) bool {
-	return contains(c.toString(), k.toString())
-}
-
-func (c Conditions) toString() []string {
-	r := make([]string, len(c))
-	for i, k := range c {
-		r[i] = k.toString()
-	}
-	return r
-}
-
-func (k Outcome) toString() string {
-	return string(k)
-}
-
-func (o Outcomes) contains(k Outcome) bool {
-	return contains(o.toString(), k.toString())
-}
-
-func (o Outcomes) toString() []string {
-	r := make([]string, len(o))
-	for i, k := range o {
-		r[i] = k.toString()
-	}
-	return r
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
 }

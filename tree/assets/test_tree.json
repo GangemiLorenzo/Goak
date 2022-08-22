@@ -1,14 +1,27 @@
 {
-    "domains": [{
-            "options": [{
-                "result": "OUTCOME_0",
-                "want": [
-                    "A"
-                ]
-            }]
+    "domains": [
+        {
+            "priority": [
+                "A"
+            ],
+            "options": [
+                {
+                    "result": "OUTCOME_0",
+                    "want": [
+                        "A"
+                    ]
+                }
+            ]
         },
         {
-            "options": [{
+            "priority": [
+                "B",
+                "C",
+                "D",
+                "E"
+            ],
+            "options": [
+                {
                     "result": "OUTCOME_1",
                     "want": [
                         "B"
